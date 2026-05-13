@@ -1,8 +1,13 @@
 import gsap from 'gsap';
-import { SplitText } from 'gsap/all';
-import { useGSAP } from '@gsap/react';
+import {SplitText} from 'gsap/all';
+import {useRef} from 'react';
+import {useGSAP} from '@gsap/react';
+import {useMediaQuery} from "react-responsive";
 
 const Hero = () => {
+    const videoRef = useRef();
+
+    const isMobile = useMediaQuery({maxWidth: 767});
     useGSAP(() => {
         const heroSplit = new SplitText('.title', {type: 'chars,words'});
         const paragraphSplit = new SplitText('.subtitle', {type: 'lines'});
@@ -11,7 +16,7 @@ const Hero = () => {
         gsap.from(heroSplit.chars, {
             yPercent: 100,
             duration: 1.8,
-            ease:'expo.out',
+            ease: 'expo.out',
             stagger: 0.05,
         })
 
@@ -19,9 +24,9 @@ const Hero = () => {
             opacity: 0,
             yPercent: 100,
             duration: 1.8,
-            ease:'expo.out',
+            ease: 'expo.out',
             stagger: 0.06,
-            delay:1,
+            delay: 1,
         })
 
         gsap.timeline({
@@ -29,46 +34,101 @@ const Hero = () => {
                 trigger: '#hero',
                 start: 'top top',
                 end: 'bottom top',
-                scrub:true,
+                scrub: true,
             }
         })
-            .to('.right-leaf',{y: 200},0)
-            .to('.left-leaf',{y: -200},0)
-    },[]);
+            .to('.right-leaf', {y: 200}, 0)
+            .to('.left-leaf', {y: -200}, 0)
+
+        const video = videoRef.current;
+
+        // Function to create the timeline once video data is ready
+        const setupVideoScrub = () => {
+            gsap.to(video, {
+                scrollTrigger: {
+                    trigger: 'video',
+                    start: startValue,
+                    // You can change 'bottom top' to something like '+=1000'
+                    // if you want the scroll area to be longer/slower
+                    end: endValue,
+                    scrub: true,
+                    pin:true,
+                },
+                currentTime: video.duration, // Animates the video to its very end
+                ease: 'none' // Crucial: Keeps the scrubbing perfectly synced with the scroll wheel
+            });
+        };
+
+        // Check if video metadata is already loaded, otherwise wait for it
+        if (video.readyState >= 1) {
+            setupVideoScrub();
+        } else {
+            video.onloadedmetadata = setupVideoScrub;
+        }
+        {/*
+        // --- NEW: Video Scroll Animation Timeline ---
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: '#hero',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true,
+            }
+        })
+            .to(videoRef.current, {
+                scale: 1.15,       // Creates a slow zoom-in effect while scrolling
+                opacity: 0,        // Fades the video out smoothly
+                yPercent: 15,      // Adds a slight parallax push downward
+                ease: 'none'       // 'none' is usually best for scrubbed scroll animations
+            });
+*/}
+        const startValue = isMobile ? 'top 50%' : 'center 60%'
+        const endValue = isMobile ? 'top 120%' : 'bottom top'
+    }, []);
     return (<>
-            <section id={"hero"} className={"noisy"}>
-                <h1 className={"title"}>MOJITO</h1>
+        <section id={"hero"} className={"noisy"}>
+            <h1 className={"title"}>MOJITO</h1>
 
-                <img
-                    src={"/images/hero-left-leaf.png"}
-                    alt={"left-leaf"}
-                    className={"left-leaf"}
-                />
+            <img
+                src={"/images/hero-left-leaf.png"}
+                alt={"left-leaf"}
+                className={"left-leaf"}
+            />
 
-                <img
-                    src={"/images/hero-right-leaf.png"}
-                    alt={"right-leaf"}
-                    className={"right-leaf"}
-                />
-                <div className={"body"}>
-                    <div className={"content"}>
-                        <div className={"space-y-5 hidden md:block"}>
-                            <p>Cool. Crisp. Classic.</p>
-                            <p className={"subtitle"}>
-                                Sip the spirit <br/> of Summer
-                            </p>
-                        </div>
-                        <div className={"view-cocktails"}>
-                            <p className={"subtitle"}>
-                                Every cocktail on our menu is a blend of premium ingredients,
-                                creative flair, and timeless recipes — designed to delight your
-                                senses.
-                            </p>
-                            <a href={"#cocktails"}>View Cocktails</a>
-                        </div>
+            <img
+                src={"/images/hero-right-leaf.png"}
+                alt={"right-leaf"}
+                className={"right-leaf"}
+            />
+            <div className={"body"}>
+                <div className={"content"}>
+                    <div className={"space-y-5 hidden md:block"}>
+                        <p>Cool. Crisp. Classic.</p>
+                        <p className={"subtitle"}>
+                            Sip the spirit <br/> of Summer
+                        </p>
+                    </div>
+                    <div className={"view-cocktails"}>
+                        <p className={"subtitle"}>
+                            Every cocktail on our menu is a blend of premium ingredients,
+                            creative flair, and timeless recipes — designed to delight your
+                            senses.
+                        </p>
+                        <a href={"#cocktails"}>View Cocktails</a>
                     </div>
                 </div>
-            </section>
-        </>)
+            </div>
+        </section>
+        <div className={"video absolute inset-0"}>
+            <video
+                ref={videoRef}
+                src={"/videos/output.mp4"} /* Make sure it's input.mp4, not imput! */
+                muted
+                playsInline
+                preload={"auto"}
+            >
+            </video>
+        </div>
+    </>)
 }
 export default Hero
